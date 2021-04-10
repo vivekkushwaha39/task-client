@@ -21,8 +21,8 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
- *
- * @author vfi
+ * Class to connect to file server.
+ * Useful for downloading the class files.
  */
 public class FileClient {
 
@@ -47,6 +47,10 @@ public class FileClient {
         this.port = port;
     }
 
+    /**
+     * Just connect to file server.
+     * @return 
+     */
     public boolean connect() {
         boolean ret = true;
         try {
@@ -54,10 +58,8 @@ public class FileClient {
             Socket s = new Socket(hostName, port);
             bw = new BufferedWriter(new PrintWriter(s.getOutputStream()));
             ois = new ObjectInputStream(s.getInputStream());
-        } catch (UnknownHostException ex) {
-            ex.printStackTrace();
-            ret = false;
-        } catch (IOException ex) {
+        }
+        catch(Exception ex){
             ex.printStackTrace();
             ret = false;
         }
@@ -65,6 +67,11 @@ public class FileClient {
         return ret;
     }
 
+    /**
+     * Get task file from server.
+     * @param className class name of the task file
+     * 
+     */
     private boolean getTaskClassFile(String className) {
         boolean ret = true;
         try {
@@ -112,7 +119,11 @@ public class FileClient {
 
         return ret;
     }
-
+    
+    /**
+     * Downloads one sample task object and task class file.
+     * 
+     */
     public Task getTask(String taskName) {
         Task task = null;
         try {
@@ -141,7 +152,9 @@ public class FileClient {
         return task;
 
     }
-    
+    /**
+     * close connection with file server.
+     */
     void close(){
         try {
             cliSock.close();

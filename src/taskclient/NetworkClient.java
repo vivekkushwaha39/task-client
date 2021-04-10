@@ -45,7 +45,12 @@ public class NetworkClient {
         this.notificationListener = notificationListener;
     }
 
-    public void init() {
+    /**
+     * Function to create socket 
+     * @return bool
+     */
+    public boolean init() {
+        boolean ret = true;
         try {
             System.out.println("creating socket");
             cliSock = new Socket(hostname, taskPort);
@@ -54,12 +59,17 @@ public class NetworkClient {
             ois = new ObjectInputStream(cliSock.getInputStream());
 
             System.out.println("end creating socket");
-        } catch (IOException ex) {
+        } catch (Exception ex) {
             ex.printStackTrace();
             notificationListener.OnError(ex);
+            ret = false;
         }
+        
+        return ret;
     }
-
+    /***
+     * Function to get Task List
+     */
     public void getTaskList() {
         System.out.println("Getting task list");
 
@@ -79,18 +89,30 @@ public class NetworkClient {
         }
     }
 
-    public void getTask(String className) {
-
+    /**
+     * Function to download task class file from file server.
+     * @param className name of the class to download.
+     */
+    public boolean getTask(String className) {
         FileClient fileClient = new FileClient(notificationListener);
         fileClient.setHostName(this.hostname);
         fileClient.setPort(this.filePort);
         if (fileClient.connect() == true) {
-            Task to = fileClient.getTask(className);
+            fileClient.getTask(className);
+            fileClient.close();
+            return true;
         }
-        fileClient.close();
+        else{
+            return false;
+        }
 
     }
 
+    /**
+     * Request server to fill the TaskObject.
+     * Server will identify using task id.
+     * @param to 
+     */
     public void fillTaskObject(TaskObject to) {
         TaskObject filledObject = null;
 
@@ -106,8 +128,12 @@ public class NetworkClient {
         notificationListener.OnTask(filledObject);
     }
 
+    /**
+     * Send calculated result to server and receive credits for it.
+     * @param res 
+     */
     public void sendResult(TaskObject res) {
-        System.out.println("Sending result");
+        System.out.println("Sending result to server");
         try {
 
             oout.writeObject("RESULT");
@@ -130,6 +156,9 @@ public class NetworkClient {
 
     }
 
+    /**
+     * close current connection with server.
+     */
     public void close() {
         System.out.println("Closing Network client");
         try {

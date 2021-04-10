@@ -7,6 +7,7 @@ package taskclient.gui;
 
 import java.util.LinkedList;
 import javax.swing.SwingUtilities;
+import javax.swing.text.DefaultCaret;
 
 public class ClientUI extends javax.swing.JFrame {
 
@@ -23,7 +24,7 @@ public class ClientUI extends javax.swing.JFrame {
             public void run() {
                 txtLog.append(text);
                 txtLog.append("\n");
-
+                
             }
         });
 
@@ -77,7 +78,8 @@ public class ClientUI extends javax.swing.JFrame {
         btnApplyConf = new javax.swing.JButton();
 
         setDefaultCloseOperation(javax.swing.WindowConstants.EXIT_ON_CLOSE);
-        setMinimumSize(new java.awt.Dimension(600, 400));
+        setMinimumSize(new java.awt.Dimension(800, 600));
+        setPreferredSize(new java.awt.Dimension(800, 600));
         getContentPane().setLayout(new java.awt.GridBagLayout());
 
         jPanel1.setLayout(new java.awt.GridBagLayout());
@@ -98,6 +100,7 @@ public class ClientUI extends javax.swing.JFrame {
         gridBagConstraints = new java.awt.GridBagConstraints();
         gridBagConstraints.gridx = 0;
         gridBagConstraints.gridy = 3;
+        gridBagConstraints.fill = java.awt.GridBagConstraints.HORIZONTAL;
         gridBagConstraints.anchor = java.awt.GridBagConstraints.FIRST_LINE_START;
         getContentPane().add(btnAvTask, gridBagConstraints);
 
@@ -107,6 +110,8 @@ public class ClientUI extends javax.swing.JFrame {
         txtLog.setEnabled(false);
         txtLog.setName(""); // NOI18N
         jScrollPane1.setViewportView(txtLog);
+        DefaultCaret caret = (DefaultCaret) txtLog.getCaret();
+        caret.setUpdatePolicy(DefaultCaret.OUT_BOTTOM);
 
         gridBagConstraints = new java.awt.GridBagConstraints();
         gridBagConstraints.gridx = 1;
@@ -169,6 +174,7 @@ public class ClientUI extends javax.swing.JFrame {
         gridBagConstraints.gridx = 3;
         gridBagConstraints.gridy = 1;
         gridBagConstraints.fill = java.awt.GridBagConstraints.HORIZONTAL;
+        gridBagConstraints.weightx = 0.3;
         getContentPane().add(txtTSPort, gridBagConstraints);
 
         jLabel6.setText("File Server Port");
@@ -188,6 +194,7 @@ public class ClientUI extends javax.swing.JFrame {
         gridBagConstraints = new java.awt.GridBagConstraints();
         gridBagConstraints.gridx = 0;
         gridBagConstraints.gridy = 2;
+        gridBagConstraints.fill = java.awt.GridBagConstraints.HORIZONTAL;
         getContentPane().add(btnApplyConf, gridBagConstraints);
 
         pack();

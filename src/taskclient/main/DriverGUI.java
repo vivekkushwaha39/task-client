@@ -41,7 +41,6 @@ public class DriverGUI extends ClientUI implements NotificationListener, ActionL
                 }
             }
         });
-        
 
     }
 
@@ -82,6 +81,7 @@ public class DriverGUI extends ClientUI implements NotificationListener, ActionL
         this.taskServerPort = iTskPrt;
         this.fileServerPort = iFilePrt;
         this.host = txtHost.getText();
+        addLog("Host Configs applied");
 
     }
 
@@ -98,7 +98,7 @@ public class DriverGUI extends ClientUI implements NotificationListener, ActionL
 
     @Override
     public void OnError(Exception ex) {
-        ex.printStackTrace();
+        addLog(ex.getMessage());
     }
 
     @Override
@@ -140,10 +140,12 @@ public class DriverGUI extends ClientUI implements NotificationListener, ActionL
         localclient.setHostname(this.host);
         localclient.setTaskPort(this.taskServerPort);
         localclient.setFilePort(this.fileServerPort);
-        
-        System.out.println("init");
-        localclient.init();
-        System.out.println("init success");
+
+        if (localclient.init() == false) {
+            btnAvTask.setEnabled(true);
+            return;
+        }
+
         addLog("Getting task list from master");
         localclient.getTaskList();
         if (tl == null) {
@@ -155,14 +157,23 @@ public class DriverGUI extends ClientUI implements NotificationListener, ActionL
         System.out.println("Available Tasks");
         String[] tasks = tl.getTaskClassName();
         String[] descs = tl.getAvailableTasks();
+        boolean isAllDownloaded = true;
         for (String s : tasks) {
             System.out.println(s);
             addLog("Downloading task class " + s);
-            localclient.getTask(s);
+            if (localclient.getTask(s) == false) {
+                isAllDownloaded = false;
+                break;
+            }
         }
-        setTasks(new LinkedList<>(Arrays.asList(descs)));
+        if (isAllDownloaded) {
+            setTasks(new LinkedList<>(Arrays.asList(descs)));
+            addLog("Downloaded all available task list");
+        }
+        else{
+            addLog("Failed to download class files");
+        }
         btnAvTask.setEnabled(true);
-        addLog("Downloaded all available task list");
         localclient.close();
         step2();
     }
@@ -174,8 +185,10 @@ public class DriverGUI extends ClientUI implements NotificationListener, ActionL
         NetworkClient client = new NetworkClient(this);
         client.setFilePort(this.fileServerPort);
         client.setTaskPort(this.taskServerPort);
-        
-        client.init();
+
+        if (client.init() == false) {
+            return;
+        }
         addLog("Getting task");
         int selItem = cmbTaskList.getSelectedIndex();
         if (selItem == -1) {
@@ -203,7 +216,7 @@ public class DriverGUI extends ClientUI implements NotificationListener, ActionL
         addLog("Sending result to master");
         client.sendResult(to);
         if (to != null) {
-            addLog("------------ Task Done Credits recieved " + to.getCredit() + " ------------");
+            addLog("------------ Task Done curr task credits " + to.getCredit() + " ------------");
         } else {
             addLog("------------------- Task Failed --------------------");
         }

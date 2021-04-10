@@ -20,11 +20,69 @@ public class DriverGUI extends ClientUI implements NotificationListener, ActionL
     private TaskList tl = null;
     private TaskObject to = null;
     private boolean busy = false;
+    private String host = "localhost";
+    private int taskServerPort = 1234;
+    private int fileServerPort = 1235;
 
     public DriverGUI() {
+
+    }
+
+    public void init() {
         step1();
         btnAvTask.addActionListener(this);
         btnDwnldTsk.addActionListener(this);
+        btnApplyConf.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent ae) {
+                if (tryAsyncAction()) {
+                    updateConfigs();
+                    setFree();
+                }
+            }
+        });
+        
+
+    }
+
+    public static Integer tryParseInt(String intdata) {
+        Integer ret = null;
+        try {
+            int i = Integer.parseInt(intdata);
+            ret = i;
+        } catch (Exception e) {
+            //ignore
+        }
+        return ret;
+    }
+
+    void updateConfigs() {
+        Integer iTskPrt = DriverGUI.tryParseInt(txtTSPort.getText());
+        if (iTskPrt == null) {
+            addLog("Task Server port is not an int");
+            return;
+        }
+        Integer iFilePrt = DriverGUI.tryParseInt(txtFSPort.getText());
+        if (iFilePrt == null) {
+            addLog("File Server port is not an int");
+            return;
+        }
+
+        if (iTskPrt.equals(iFilePrt)) {
+            addLog("Please use two different ports for File and Task server");
+            return;
+        }
+
+        if (txtHost.getText().isEmpty() == true) {
+            addLog("Host can't be empty");
+            return;
+
+        }
+
+        this.taskServerPort = iTskPrt;
+        this.fileServerPort = iFilePrt;
+        this.host = txtHost.getText();
+
     }
 
     @Override
@@ -79,8 +137,13 @@ public class DriverGUI extends ClientUI implements NotificationListener, ActionL
 
         btnAvTask.setEnabled(false);
         NetworkClient localclient = new NetworkClient(this);
-        localclient.setHostname(txtHost.getText());
+        localclient.setHostname(this.host);
+        localclient.setTaskPort(this.taskServerPort);
+        localclient.setFilePort(this.fileServerPort);
+        
+        System.out.println("init");
         localclient.init();
+        System.out.println("init success");
         addLog("Getting task list from master");
         localclient.getTaskList();
         if (tl == null) {
@@ -109,6 +172,9 @@ public class DriverGUI extends ClientUI implements NotificationListener, ActionL
      */
     private void performTask() {
         NetworkClient client = new NetworkClient(this);
+        client.setFilePort(this.fileServerPort);
+        client.setTaskPort(this.taskServerPort);
+        
         client.init();
         addLog("Getting task");
         int selItem = cmbTaskList.getSelectedIndex();
@@ -137,7 +203,7 @@ public class DriverGUI extends ClientUI implements NotificationListener, ActionL
         addLog("Sending result to master");
         client.sendResult(to);
         if (to != null) {
-            addLog("------------ Task Done Credits recieved ------------");
+            addLog("------------ Task Done Credits recieved " + to.getCredit() + " ------------");
         } else {
             addLog("------------------- Task Failed --------------------");
         }
@@ -163,13 +229,13 @@ public class DriverGUI extends ClientUI implements NotificationListener, ActionL
      * @return
      */
     private boolean tryAsyncAction() {
+
         synchronized (this) {
             boolean ret = true;
             if (busy == true) {
                 ret = false;
             } else {
                 busy = true;
-                ret = true;
             }
             return ret;
         }

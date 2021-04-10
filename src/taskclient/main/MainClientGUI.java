@@ -40,6 +40,7 @@ public class MainClientGUI {
 		java.awt.EventQueue.invokeLater(new Runnable() {
 			public void run() {
 				DriverGUI dgui = new DriverGUI();
+                                dgui.init();
 				dgui.setVisible(true);
 			}
 		});

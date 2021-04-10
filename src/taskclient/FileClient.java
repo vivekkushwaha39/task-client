@@ -17,6 +17,8 @@ import java.net.Socket;
 import java.net.UnknownHostException;
 import Contract.PlaceHolder;
 import Contract.Task;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  *
@@ -138,6 +140,14 @@ public class FileClient {
 
         return task;
 
+    }
+    
+    void close(){
+        try {
+            cliSock.close();
+        } catch (IOException ex) {
+            Logger.getLogger(FileClient.class.getName()).log(Level.SEVERE, null, ex);
+        }
     }
 
 }

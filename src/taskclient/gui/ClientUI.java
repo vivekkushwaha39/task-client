@@ -36,15 +36,15 @@ public class ClientUI extends javax.swing.JFrame {
 		btnAvTask.setEnabled(true);
 	}
 
-	public void setTasks(LinkedList<String> avTasks, LinkedList<String>desc ) {
-		for (int i=0;i<avTasks.size(); i++) {
-			cmbTaskList.addItem(avTasks.get(i)+": "+ desc.get(i));
+	public void setTasks( LinkedList<String>desc ) {
+		for (int i=0;i<desc.size(); i++) {
+			cmbTaskList.addItem(desc.get(i));
 		}
 		cmbTaskList.setSelectedIndex(0);
 	}
 
 	public void step2() {
-		btnAvTask.setEnabled(false);
+		btnAvTask.setEnabled(true);
 		btnDwnldTsk.setEnabled(true);
 		cmbTaskList.setEnabled(true);
 	}
@@ -126,7 +126,7 @@ public class ClientUI extends javax.swing.JFrame {
         gridBagConstraints.anchor = java.awt.GridBagConstraints.LINE_START;
         getContentPane().add(jLabel1, gridBagConstraints);
 
-        btnDwnldTsk.setText("Download And perform Task");
+        btnDwnldTsk.setText("Perform Task");
         gridBagConstraints = new java.awt.GridBagConstraints();
         gridBagConstraints.gridx = 2;
         gridBagConstraints.gridy = 4;

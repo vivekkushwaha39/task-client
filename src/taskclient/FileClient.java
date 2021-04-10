@@ -16,6 +16,7 @@ import java.io.PrintWriter;
 import java.net.Socket;
 import java.net.UnknownHostException;
 import Contract.PlaceHolder;
+import Contract.Task;
 
 /**
  *
@@ -110,8 +111,8 @@ public class FileClient {
         return ret;
     }
 
-    public TaskObject getTask(String taskName) {
-        TaskObject to = null;
+    public Task getTask(String taskName) {
+        Task task = null;
         try {
             bw.write("GET_TASK");
             bw.newLine();
@@ -120,14 +121,14 @@ public class FileClient {
             boolean isDownloaded = getTaskClassFile(taskName);
             if (isDownloaded == false) {
                 cliSock.close();
-                return to;
+                return task;
             }
             bw.write("OK");
             bw.newLine();
             bw.flush();
-            to = (TaskObject) ois.readObject();
+            task = (Task) ois.readObject();
 
-            if (to == null) {
+            if (task == null) {
                 System.out.println("NULL is recieved");
             }
 
@@ -135,7 +136,7 @@ public class FileClient {
             ex.printStackTrace();
         }
 
-        return to;
+        return task;
 
     }
 

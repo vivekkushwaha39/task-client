@@ -5,6 +5,7 @@
  */
 package taskclient;
 
+import Contract.Task;
 import Contract.TaskList;
 import Contract.TaskObject;
 import java.io.BufferedWriter;
@@ -25,7 +26,7 @@ public class NetworkClient {
     NotificationListener notificationListener;
     Socket cliSock = null;
     String hostname = "localhost";
-
+    int port = 1234;
     public void setHostname(String hostname) {
         this.hostname = hostname;
     }
@@ -36,7 +37,7 @@ public class NetworkClient {
 
     public void init() {
         try {
-            cliSock = new Socket("localhost", 1234);
+            cliSock = new Socket("localhost", port);
         } catch (IOException ex) {
             ex.printStackTrace();
             notificationListener.OnError(ex);
@@ -45,16 +46,16 @@ public class NetworkClient {
 
     public void getTaskList() {
         System.out.println("Getting task list");
-        ObjectInputStream ios = null;
+        
         try {
 
             System.out.println("Getting output");
-            BufferedWriter pr = new BufferedWriter(new PrintWriter(cliSock.getOutputStream()));
+            ObjectOutputStream oout = new ObjectOutputStream(cliSock.getOutputStream());
+            ObjectInputStream ios  = new ObjectInputStream(cliSock.getInputStream());
             System.out.println("Getting task list");
-            pr.write("GET_TASKS_LIST");
-            pr.newLine();
-            pr.flush();
-            ios = new ObjectInputStream(cliSock.getInputStream());
+            oout.writeObject("GET_TASKS_LIST");
+            oout.flush();
+            
             System.out.println("wating for tasklist obj");
             Object taskList = ios.readObject();
             TaskList tl = (TaskList) taskList;
@@ -130,34 +131,57 @@ public class NetworkClient {
 
         FileClient fileClient = new FileClient(notificationListener);
         if (fileClient.connect() == true) {
-            TaskObject to = fileClient.getTask(className);
-            notificationListener.OnTask(to);
+            Task to = fileClient.getTask(className);
         }
 
     }
+    
+    public void fillTaskObject(TaskObject to){
+        TaskObject filledObject = null;
+        
+        try{
+            ObjectOutputStream oout = new ObjectOutputStream(cliSock.getOutputStream());
+            ObjectInputStream ois = new ObjectInputStream(cliSock.getInputStream());
+            oout.writeObject("FILL_TASK");
+            oout.writeObject(to);
+            oout.flush();
+            filledObject = (TaskObject) ois.readObject();
+        }
+        catch(Exception ex){
+            ex.printStackTrace();
+        }
+        
+        notificationListener.OnTask(filledObject);
+    }
 
-    public void sendResult(Object res) {
+    public void sendResult(TaskObject res) {
         System.out.println("Sending result");
         try {
-            BufferedWriter pr = new BufferedWriter(new PrintWriter(cliSock.getOutputStream()));
-            pr.write("RESULT");
-            pr.newLine();
-            pr.flush();
+            ObjectOutputStream oout = new ObjectOutputStream(cliSock.getOutputStream());
+            ObjectInputStream ois = new ObjectInputStream(cliSock.getInputStream());
+            oout.writeObject("RESULT");
+            oout.flush();
             Thread.sleep(500);
             System.out.println("Writing object");
-            ObjectOutputStream oOut = new ObjectOutputStream(cliSock.getOutputStream());
-            oOut.writeObject(res);
+            oout.writeObject(res);
+            oout.flush();
             Thread.sleep(1000);
-            oOut.flush();
+            TaskObject to = (TaskObject) ois.readObject();
+            notificationListener.OnTask(to);
+            
         } catch (IOException ex) {
             ex.printStackTrace();
         } catch (InterruptedException ex) {
             ex.printStackTrace();
+        } catch (ClassNotFoundException ex) {
+            ex.printStackTrace();
         }
 
     }
-
+    
+    
     public void close() {
+        System.out.println("Closing Network client");
         try {
             this.cliSock.close();
         } catch (IOException ex) {

@@ -5,7 +5,6 @@
  */
 package taskclient;
 
-import Contract.Task;
 import Contract.TaskList;
 import Contract.TaskObject;
 

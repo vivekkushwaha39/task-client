@@ -18,10 +18,8 @@ import taskclient.gui.ClientUI;
 public class DriverGUI extends ClientUI implements NotificationListener, ActionListener {
 
     private TaskList tl = null;
-    private TaskObject t = null;
-    private Object res = null;
-    private NetworkClient client;
-    private boolean isBusy = false;
+    private TaskObject to = null;
+    private boolean busy = false;
 
     public DriverGUI() {
         step1();
@@ -37,7 +35,7 @@ public class DriverGUI extends ClientUI implements NotificationListener, ActionL
     @Override
     public void OnTask(TaskObject t) {
         System.out.println("Ontask");
-        this.t = t;
+        this.to = t;
     }
 
     @Override
@@ -47,45 +45,47 @@ public class DriverGUI extends ClientUI implements NotificationListener, ActionL
 
     @Override
     public void actionPerformed(ActionEvent e) {
-
-        if (isBusy == true) {
-            System.out.println("GUI is busy");
+        if (tryAsyncAction() == false) {
+            //it means we are busy
+            System.out.println("Client is busy");
+            return;
         }
+
         System.out.println("actionPerformed");
         try {
             new Thread(new Runnable() {
                 @Override
                 public void run() {
-                    DriverGUI.this.isBusy = true;
                     if (e.getSource().equals(btnAvTask)) {
                         populateTaskList();
 
                     } else if (e.getSource().equals(btnDwnldTsk)) {
-                        downloadTask();
+                        performTask();
                     }
 
-                    DriverGUI.this.isBusy = false;
                 }
             }).start();
         } catch (Exception ex) {
             ex.printStackTrace();
+        } finally {
+            setFree();
         }
     }
 
     /**
-     * Function to get task list
+     * Function to get task list And download all class files
      */
     private void populateTaskList() {
 
         btnAvTask.setEnabled(false);
-        client = new NetworkClient(this);
-        client.setHostname(txtHost.getText());
-        client.init();
+        NetworkClient localclient = new NetworkClient(this);
+        localclient.setHostname(txtHost.getText());
+        localclient.init();
         addLog("Getting task list from master");
-        client.getTaskList();
+        localclient.getTaskList();
         if (tl == null) {
             addLog("TaskList not avaialable");
-            client.close();
+            localclient.close();
             return;
         }
 
@@ -94,18 +94,23 @@ public class DriverGUI extends ClientUI implements NotificationListener, ActionL
         String[] descs = tl.getAvailableTasks();
         for (String s : tasks) {
             System.out.println(s);
+            addLog("Downloading task class " + s);
+            localclient.getTask(s);
         }
-        setTasks(new LinkedList<String>(Arrays.asList(tasks)), new LinkedList<String>(Arrays.asList(descs)));
+        setTasks(new LinkedList<>(Arrays.asList(descs)));
         btnAvTask.setEnabled(true);
-        addLog("Downloaded available task list");
+        addLog("Downloaded all available task list");
+        localclient.close();
         step2();
     }
 
     /**
      * Function to download task and class file
      */
-    private void downloadTask() {
-        addLog("Downloading tasks");
+    private void performTask() {
+        NetworkClient client = new NetworkClient(this);
+        client.init();
+        addLog("Getting task");
         int selItem = cmbTaskList.getSelectedIndex();
         if (selItem == -1) {
             addLog("Please Select task from Dropdown");
@@ -113,10 +118,12 @@ public class DriverGUI extends ClientUI implements NotificationListener, ActionL
             addLog("No task selected");
             return;
         }
-        String selTask = tl.getTaskClassName()[selItem];
-        client.getTask(selTask);
-        addLog("Downloading task " + selTask);
-        if (t == null) {
+
+        TaskObject taskObject = new TaskObject();
+        taskObject.setTaskID(selItem);
+        addLog("Filling task with id" + selItem);
+        client.fillTaskObject(taskObject);
+        if (to == null) {
             addLog("Selected task is null aborting");
             System.out.println("task is null");
             addLog("task is null");
@@ -125,20 +132,47 @@ public class DriverGUI extends ClientUI implements NotificationListener, ActionL
             return;
         }
         addLog("Executing task");
-        t.getTObject().executeTask();
-
-        res = t.getTObject().getResult();
-        addLog("Result is '" + res.toString() + "'");
+        to.getTObject().executeTask();
+        addLog("Result is '" + to.getTObject().getResult().toString() + "'");
         addLog("Sending result to master");
-        client.sendResult(res);
-        addLog("------------result sent to master------------");
+        client.sendResult(to);
+        if (to != null) {
+            addLog("------------ Task Done Credits recieved ------------");
+        } else {
+            addLog("------------------- Task Failed --------------------");
+        }
         addLog("");
         client.close();
-        step1();
     }
 
     @Override
     public void OnMessage(String msg) {
         addLog(msg);
     }
+
+    private void setFree() {
+        synchronized (this) {
+            busy = false;
+        }
+    }
+
+    /**
+     * Try performing action. This function prevents client to perform actions
+     * when client already working on some other task.
+     *
+     * @return
+     */
+    private boolean tryAsyncAction() {
+        synchronized (this) {
+            boolean ret = true;
+            if (busy == true) {
+                ret = false;
+            } else {
+                busy = true;
+                ret = true;
+            }
+            return ret;
+        }
+    }
+
 }
